@@ -48,6 +48,23 @@ class ApplicationCommandManager extends CachedManager {
     return id ? path.commands(id) : path.commands;
   }
 
+  async _fetchSingle({ cache, force = false, guildId, id }) {
+    if (!force) {
+      const existing = this.cache.get(id);
+      if (existing) return existing;
+    }
+    const command = await this.commandPath({ id, guildId }).get();
+    return this._add(command, cache);
+  }
+
+  async _fetchMany({ cache, guildId, locale, withLocalizations } = {}) {
+    const data = await this.commandPath({ guildId }).get({
+      headers: { 'X-Discord-Locale': locale },
+      query: typeof withLocalizations === 'boolean' ? { with_localizations: withLocalizations } : undefined,
+    });
+    return data.reduce((coll, command) => coll.set(command.id, this._add(command, cache, guildId)), new Collection());
+  }
+
   /**
    * Data that resolves to give an ApplicationCommand object. This can be:
    * * An ApplicationCommand object
@@ -93,25 +110,19 @@ class ApplicationCommandManager extends CachedManager {
    *   .then(commands => console.log(`Fetched ${commands.size} commands`))
    *   .catch(console.error);
    */
-  async fetch(id, { guildId, cache = true, force = false, locale, withLocalizations } = {}) {
-    if (typeof id === 'object') {
-      ({ guildId, cache = true, locale, withLocalizations } = id);
-    } else if (id) {
-      if (!force) {
-        const existing = this.cache.get(id);
-        if (existing) return existing;
-      }
-      const command = await this.commandPath({ id, guildId }).get();
-      return this._add(command, cache);
+  async fetch(options, { guildId, cache = true, force = false, locale, withLocalizations } = {}) {
+    if (!options) return this._fetchMany();
+
+    if (typeof options === 'string') return this._fetchSingle({ id: options, cache, force, guildId });
+
+    if (typeof options === 'object') {
+      ({ guildId, cache = true, locale, withLocalizations } = options);
+      const id = options.id;
+      if (id) return this._fetchSingle({ cache, force, guildId, id });
+      return this._fetchMany({ cache, guildId, locale, withLocalizations });
     }
 
-    const data = await this.commandPath({ guildId }).get({
-      headers: {
-        'X-Discord-Locale': locale,
-      },
-      query: typeof withLocalizations === 'boolean' ? { with_localizations: withLocalizations } : undefined,
-    });
-    return data.reduce((coll, command) => coll.set(command.id, this._add(command, cache, guildId)), new Collection());
+    return this._fetchMany({ cache, guildId, locale, withLocalizations });
   }
 
   /**
@@ -232,21 +243,25 @@ class ApplicationCommandManager extends CachedManager {
 
     if ('defaultMemberPermissions' in command) {
       default_member_permissions =
-        command.defaultMemberPermissions !== null
-          ? new Permissions(command.defaultMemberPermissions).bitfield.toString()
-          : command.defaultMemberPermissions;
+        command.defaultMemberPermissions === null
+          ? command.defaultMemberPermissions
+          : new Permissions(command.defaultMemberPermissions).bitfield.toString();
     }
 
     return {
       name: command.name,
       name_localizations: command.nameLocalizations ?? command.name_localizations,
       description: command.description,
+      nsfw: command.nsfw,
       description_localizations: command.descriptionLocalizations ?? command.description_localizations,
       type: typeof command.type === 'number' ? command.type : ApplicationCommandTypes[command.type],
       options: command.options?.map(o => ApplicationCommand.transformOption(o)),
       default_permission: command.defaultPermission ?? command.default_permission,
       default_member_permissions,
       dm_permission: command.dmPermission ?? command.dm_permission,
+      integration_types: command.integrationTypes ?? command.integration_types,
+      contexts: command.contexts,
+      handler: command.handler,
     };
   }
 }

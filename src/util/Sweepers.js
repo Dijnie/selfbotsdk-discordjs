@@ -53,6 +53,9 @@ class Sweepers {
             break;
           case 'threads':
             clonedOptions.filter = this.constructor.archivedThreadSweepFilter(clonedOptions.lifetime);
+            break;
+          default:
+            break;
         }
       }
 
@@ -85,6 +88,23 @@ class Sweepers {
    */
   sweepAutoModerationRules(filter) {
     return this._sweepGuildDirectProp('autoModerationRules', filter).items;
+  }
+
+  /**
+   * Sweeps all client application entitlements and removes the ones which are indicated by the filter.
+   * @param {Function} filter The function used to determine which entitlements will be removed from the caches.
+   * @returns {number} Amount of entitlements that were removed from the caches
+   */
+  sweepEntitlements(filter) {
+    if (typeof filter !== 'function') {
+      throw new TypeError('INVALID_TYPE', 'filter', 'function');
+    }
+
+    const entitlements = this.client.application?.entitlements?.cache.sweep(filter) ?? 0;
+
+    this.client.emit(Events.CACHE_SWEEP, `Swept ${entitlements} entitlements.`);
+
+    return entitlements;
   }
 
   /**
@@ -146,7 +166,7 @@ class Sweepers {
     let messages = 0;
 
     for (const channel of this.client.channels.cache.values()) {
-      if (!channel.isText()) continue;
+      if (!channel.isTextBased()) continue;
 
       channels++;
       messages += channel.messages.cache.sweep(filter);
@@ -178,7 +198,7 @@ class Sweepers {
     let reactions = 0;
 
     for (const channel of this.client.channels.cache.values()) {
-      if (!channel.isText()) continue;
+      if (!channel.isTextBased()) continue;
       channels++;
 
       for (const message of channel.messages.cache.values()) {
@@ -407,6 +427,9 @@ class Sweepers {
     let items = 0;
 
     for (const guild of this.client.guilds.cache.values()) {
+      // Skip unavailable guilds - their caches may not be properly initialized
+      if (!guild.available) continue;
+
       const { cache } = guild[key];
 
       guilds++;

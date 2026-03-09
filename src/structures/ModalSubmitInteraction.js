@@ -112,6 +112,7 @@ class ModalSubmitInteraction extends Interaction {
   followUp() {}
   update() {}
   deferUpdate() {}
+  launchActivity() {}
 }
 
 InteractionResponses.applyToClass(ModalSubmitInteraction, ['showModal', 'awaitModalSubmit']);

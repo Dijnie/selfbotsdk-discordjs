@@ -37,8 +37,8 @@ class ClientPresence extends Presence {
   _parse({ status, since, afk, activities }) {
     const data = {
       activities: [],
-      afk: typeof afk === 'boolean' ? afk : this.afk,
-      since: typeof since === 'number' && !Number.isNaN(since) ? this.since : 0,
+      afk: typeof afk === 'boolean' ? afk : false,
+      since: typeof since === 'number' && !Number.isNaN(since) ? since : null,
       status: status ?? this.status,
     };
     if (activities?.length) {

@@ -70,11 +70,11 @@ class PermissionOverwriteManager extends CachedManager {
   }
 
   /**
-   * Extra information about the overwrite
+   * Extra information about the overwrite.
    * @typedef {Object} GuildChannelOverwriteOptions
-   * @property {string} [reason] Reason for creating/editing this overwrite
-   * @property {number} [type] The type of overwrite, either `0` for a role or `1` for a member. Use this to bypass
-   * automatic resolution of type that results in an error for uncached structure
+   * @property {string} [reason] The reason for creating/editing this overwrite
+   * @property {OverwriteType} [type] The type of overwrite. Use this to bypass automatic resolution of `type`
+   * that results in an error for an uncached structure
    */
 
   /**
@@ -86,13 +86,14 @@ class PermissionOverwriteManager extends CachedManager {
    * @returns {Promise<GuildChannel>}
    * @private
    */
-  async upsert(userOrRole, options, overwriteOptions = {}, existing) {
-    let userOrRoleId = this.channel.guild.roles.resolveId(userOrRole) ?? this.client.users.resolveId(userOrRole);
-    let { type, reason } = overwriteOptions;
-    if (typeof type !== 'number') {
-      userOrRole = this.channel.guild.roles.resolve(userOrRole) ?? this.client.users.resolve(userOrRole);
-      if (!userOrRole) throw new TypeError('INVALID_TYPE', 'parameter', 'User nor a Role');
-      type = userOrRole instanceof Role ? OverwriteTypes.role : OverwriteTypes.member;
+  async upsert(userOrRole, options, { reason, type } = {}, existing = undefined) {
+    const userOrRoleId = this.channel.guild.roles.resolveId(userOrRole) ?? this.client.users.resolveId(userOrRole);
+
+    let resolvedType = type;
+    if (typeof resolvedType !== 'number') {
+      const resolvedUserOrRole = this.channel.guild.roles.resolve(userOrRole) ?? this.client.users.resolve(userOrRole);
+      if (!resolvedUserOrRole) throw new TypeError('INVALID_TYPE', 'parameter', 'User nor a Role');
+      resolvedType = resolvedUserOrRole instanceof Role ? OverwriteTypes.role : OverwriteTypes.member;
     }
 
     const { allow, deny } = PermissionOverwrites.resolveOverwriteOptions(options, existing);
@@ -101,7 +102,7 @@ class PermissionOverwriteManager extends CachedManager {
       .channels(this.channel.id)
       .permissions(userOrRoleId)
       .put({
-        data: { id: userOrRoleId, type, allow, deny },
+        data: { id: userOrRoleId, type: resolvedType, allow, deny },
         reason,
       });
     return this.channel;
@@ -116,12 +117,12 @@ class PermissionOverwriteManager extends CachedManager {
    * @example
    * // Create or Replace permission overwrites for a message author
    * message.channel.permissionOverwrites.create(message.author, {
-   *   SEND_MESSAGES: false
+   *   SendMessages: false
    * })
    *   .then(channel => console.log(channel.permissionOverwrites.cache.get(message.author.id)))
    *   .catch(console.error);
    */
-  create(userOrRole, options, overwriteOptions) {
+  async create(userOrRole, options, overwriteOptions) {
     return this.upsert(userOrRole, options, overwriteOptions);
   }
 
@@ -139,7 +140,7 @@ class PermissionOverwriteManager extends CachedManager {
    *   .then(channel => console.log(channel.permissionOverwrites.cache.get(message.author.id)))
    *   .catch(console.error);
    */
-  edit(userOrRole, options, overwriteOptions) {
+  async edit(userOrRole, options, overwriteOptions) {
     const existing = this.cache.get(
       this.channel.guild.roles.resolveId(userOrRole) ?? this.client.users.resolveId(userOrRole),
     );

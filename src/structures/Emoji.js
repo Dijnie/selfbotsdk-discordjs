@@ -96,6 +96,16 @@ class Emoji extends Base {
   }
 
   /**
+   * Returns a URL for the emoji or `null` if this is not a custom emoji.
+   * @param {StaticImageURLOptions} [options={}] Options for the emoji URL
+   * @returns {?string}
+   */
+  imageURL({ format, size } = {}) {
+    if (!this.id) return null;
+    return this.client.rest.cdn.Emoji(this.id, format ?? (this.animated ? 'gif' : 'png'), size);
+  }
+
+  /**
    * The timestamp the emoji was created at, or null if unicode
    * @type {?number}
    * @readonly

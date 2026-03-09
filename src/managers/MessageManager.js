@@ -81,6 +81,41 @@ class MessageManager extends CachedManager {
    *   .then(messages => console.log(`Received ${messages.size} messages`))
    *   .catch(console.error);
    */
+  /**
+   * Options used to fetch pinned messages.
+   * @typedef {Object} FetchPinnedMessagesOptions
+   * @property {DateResolvable} [before] Consider only pinned messages before this time
+   * @property {number} [limit] The maximum number of pinned messages to return
+   * @property {boolean} [cache] Whether to cache the pinned messages
+   */
+
+  /**
+   * Data returned from fetching pinned messages.
+   * @typedef {Object} FetchPinnedMessagesResponse
+   * @property {MessagePin[]} items The pinned messages
+   * @property {boolean} hasMore Whether there are additional pinned messages that require a subsequent call
+   */
+
+  /**
+   * Pinned message data returned from fetching pinned messages.
+   * @typedef {Object} MessagePin
+   * @property {Date} pinnedAt The time the message was pinned at
+   * @property {number} pinnedTimestamp The timestamp the message was pinned at
+   * @property {Message} message The pinned message
+   */
+
+  /**
+   * Fetches the pinned messages of this channel and returns a collection of them.
+   * <info>The returned Collection does not contain any reaction data of the messages.
+   * Those need to be fetched separately.</info>
+   * @param {boolean} [cache=true] Whether to cache the message(s)
+   * @returns {Promise<Collection<Snowflake, Message>>}
+   * @example
+   * // Get pinned messages
+   * channel.messages.fetchPinned()
+   *   .then(messages => console.log(`Received ${messages.size} messages`))
+   *   .catch(console.error);
+   */
   async fetchPinned(cache = true) {
     const data = await this.client.api.channels[this.channel.id].messages.pins.get({
       query: { limit: 50 },
@@ -88,6 +123,37 @@ class MessageManager extends CachedManager {
     const messages = new Collection();
     for (const message of data?.items || []) messages.set(message.id, this._add(message, cache));
     return messages;
+  }
+
+  /**
+   * Fetches the pinned messages of this channel, returning a paginated result.
+   * <info>The returned messages do not contain any reaction data.
+   * Those need to be fetched separately.</info>
+   * @param {FetchPinnedMessagesOptions} [options={}] Options for fetching pinned messages
+   * @returns {Promise<FetchPinnedMessagesResponse>}
+   * @example
+   * // Get pinned messages (paginated)
+   * channel.messages.fetchPins()
+   *   .then(result => console.log(`Received ${result.items.length} messages`))
+   *   .catch(console.error);
+   */
+  async fetchPins({ cache, before, limit } = {}) {
+    const query = {};
+    if (before) query.before = new Date(before).toISOString();
+    if (limit) query.limit = limit;
+
+    const data = await this.client.api.channels[this.channel.id].messages.pins.get({ query });
+
+    return {
+      items: (data.items || []).map(item => ({
+        pinnedTimestamp: Date.parse(item.pinned_at),
+        get pinnedAt() {
+          return new Date(this.pinnedTimestamp);
+        },
+        message: this._add(item.message, cache),
+      })),
+      hasMore: data.has_more ?? false,
+    };
   }
 
   /**
@@ -412,9 +478,15 @@ class MessageManager extends CachedManager {
    * @returns {Promise<Collection<Snowflake, User>>}
    */
   async fetchPollAnswerVoters({ messageId, answerId, after, limit }) {
-    const voters = await this.client.channels(this.channel.id).polls(messageId).answers(answerId).get({
-      query: { limit, after },
-    });
+    const query = {};
+    if (limit) query.limit = limit;
+    if (after) query.after = after;
+
+    const voters = await this.client.api
+      .channels(this.channel.id)
+      .polls(messageId)
+      .answers(answerId)
+      .get({ query });
 
     return voters.users.reduce((acc, user) => acc.set(user.id, this.client.users._add(user, false)), new Collection());
   }

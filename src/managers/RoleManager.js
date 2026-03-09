@@ -63,26 +63,39 @@ class RoleManager extends CachedManager {
    *   .catch(console.error);
    */
   async fetch(id, { cache = true, force = false } = {}) {
-    if (id && !force) {
-      const existing = this.cache.get(id);
-      if (existing) return existing;
+    if (id) {
+      if (!force) {
+        const existing = this.cache.get(id);
+        if (existing) return existing;
+      }
+
+      // Try to fetch single role — may fail on some API versions; fall back to fetching all
+      try {
+        const data = await this.client.api.guilds(this.guild.id).roles(id).get();
+        return this._add(data, cache);
+      } catch (_err) {
+        // Fall back: fetch all roles and return the matching one
+        const innerData = await this.client.api.guilds(this.guild.id).roles.get();
+        const roles = new Collection();
+        for (const role of innerData) roles.set(role.id, this._add(role, cache));
+        return roles.get(id) ?? null;
+      }
     }
 
-    // We cannot fetch a single role, as of this commit's date, Discord API throws with 405
     const data = await this.client.api.guilds(this.guild.id).roles.get();
     const roles = new Collection();
     for (const role of data) roles.set(role.id, this._add(role, cache));
-    return id ? roles.get(id) ?? null : roles;
+    return roles;
   }
 
   /**
    * Fetches the member counts for each role in the guild.
-   * @returns {Promise<Record<Snowflake, number>>}
+   * <info>This does not include the `@everyone` role.</info>
+   * @returns {Promise<Collection<Snowflake, number>>} A collection mapping role ids to their respective member counts.
    */
   async fetchMemberCounts() {
     const data = await this.client.api.guilds(this.guild.id).roles('member-counts').get();
-
-    return data;
+    return new Collection(Object.entries(data));
   }
 
   /**
@@ -241,10 +254,16 @@ class RoleManager extends CachedManager {
   }
 
   /**
+   * Options for editing a role
+   * @typedef {RoleData} RoleEditOptions
+   * @property {string} [reason] The reason for editing this role
+   */
+
+  /**
    * Edits a role of the guild.
    * @param {RoleResolvable} role The role to edit
-   * @param {RoleData} data The new data for the role
-   * @param {string} [reason] Reason for editing this role
+   * @param {RoleEditOptions|RoleData} options The options to provide (or legacy: data object)
+   * @param {string} [reason] Reason for editing this role (legacy param, use options.reason instead)
    * @returns {Promise<Role>}
    * @example
    * // Edit a role
@@ -252,26 +271,29 @@ class RoleManager extends CachedManager {
    *   .then(updated => console.log(`Edited role name to ${updated.name}`))
    *   .catch(console.error);
    */
-  async edit(role, data, reason) {
+  async edit(role, options, reason) {
     role = this.resolve(role);
     if (!role) throw new TypeError('INVALID_TYPE', 'role', 'RoleResolvable');
 
-    if (typeof data.position === 'number') await this.setPosition(role, data.position, { reason });
+    // Support legacy (data, reason) signature
+    const resolvedReason = options?.reason ?? reason;
 
-    let icon = data.icon;
+    if (typeof options.position === 'number') await this.setPosition(role, options.position, { reason: resolvedReason });
+
+    let icon = options.icon;
     if (icon) {
       const guildEmojiURL = this.guild.emojis.resolve(icon)?.url;
       icon = guildEmojiURL ? await DataResolver.resolveImage(guildEmojiURL) : await DataResolver.resolveImage(icon);
       if (typeof icon !== 'string') icon = undefined;
     }
 
-    let colors = data.colors && {
-      primary_color: resolveColor(data.colors.primaryColor),
-      secondary_color: data.colors.secondaryColor && resolveColor(data.colors.secondaryColor),
-      tertiary_color: data.colors.tertiaryColor && resolveColor(data.colors.tertiaryColor),
+    let colors = options.colors && {
+      primary_color: resolveColor(options.colors.primaryColor),
+      secondary_color: options.colors.secondaryColor && resolveColor(options.colors.secondaryColor),
+      tertiary_color: options.colors.tertiaryColor && resolveColor(options.colors.tertiaryColor),
     };
 
-    if (data.color !== undefined) {
+    if (options.color !== undefined) {
       if (!deprecationEmittedForEdit) {
         process.emitWarning(`Passing "color" to RoleManager#edit() is deprecated. Use "colors" instead.`);
       }
@@ -279,23 +301,23 @@ class RoleManager extends CachedManager {
       deprecationEmittedForEdit = true;
 
       colors = {
-        primary_color: resolveColor(data.color),
+        primary_color: resolveColor(options.color),
         secondary_color: null,
         tertiary_color: null,
       };
     }
 
     const _data = {
-      name: data.name,
+      name: options.name,
       colors,
-      hoist: data.hoist,
-      permissions: typeof data.permissions === 'undefined' ? undefined : new Permissions(data.permissions),
-      mentionable: data.mentionable,
+      hoist: options.hoist,
+      permissions: typeof options.permissions === 'undefined' ? undefined : new Permissions(options.permissions),
+      mentionable: options.mentionable,
       icon,
-      unicode_emoji: data.unicodeEmoji,
+      unicode_emoji: options.unicodeEmoji,
     };
 
-    const d = await this.client.api.guilds(this.guild.id).roles(role.id).patch({ data: _data, reason });
+    const d = await this.client.api.guilds(this.guild.id).roles(role.id).patch({ data: _data, reason: resolvedReason });
 
     const clone = role._clone();
     clone._patch(d);

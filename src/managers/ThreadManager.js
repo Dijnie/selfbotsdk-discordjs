@@ -69,14 +69,15 @@ class ThreadManager extends CachedManager {
    * ThreadChannelResolvable then the specified thread will be fetched. Fetches all active threads if `undefined`
    * @param {BaseFetchOptions} [cacheOptions] Additional options for this fetch. <warn>The `force` field gets ignored
    * if `options` is not a {@link ThreadChannelResolvable}</warn>
-   * @returns {Promise<?(ThreadChannel|FetchedThreads)>}
+   * @returns {Promise<?(ThreadChannel|FetchedThreads|FetchedThreadsMore)>}
+   * {@link FetchedThreads} if active & {@link FetchedThreadsMore} if archived.
    * @example
    * // Fetch a thread by its id
    * channel.threads.fetch('831955138126104859')
    *   .then(channel => console.log(channel.name))
    *   .catch(console.error);
    */
-  fetch(options, { cache, force } = {}) {
+  async fetch(options, { cache, force } = {}) {
     if (!options) return this.fetchActive(cache);
     const channel = this.client.channels.resolveId(options);
     if (channel) return this.client.channels.fetch(channel, { cache, force });
@@ -109,6 +110,12 @@ class ThreadManager extends CachedManager {
    * The data returned from a thread fetch that returns multiple threads.
    * @typedef {Object} FetchedThreads
    * @property {Collection<Snowflake, ThreadChannel>} threads The threads that were fetched, with any members returned
+   * @property {Collection<Snowflake, ThreadMember>} members The thread members that were fetched
+   */
+
+  /**
+   * Data returned from fetching multiple threads.
+   * @typedef {FetchedThreads} FetchedThreadsMore
    * @property {?boolean} hasMore Whether there are potentially additional threads that require a subsequent call
    */
 
@@ -158,17 +165,28 @@ class ThreadManager extends CachedManager {
       if (parent && thread.parentId !== parent.id) return coll;
       return coll.set(thread.id, thread);
     }, new Collection());
+
     // Discord sends the thread id as id in this object
-    for (const rawMember of rawThreads.members) client.channels.cache.get(rawMember.id)?.members._add(rawMember);
+    const threadMembers = rawThreads.members.reduce((coll, raw) => {
+      const thread = threads.get(raw.id);
+      if (thread) {
+        thread.members._add(raw);
+        return coll.set(raw.user_id ?? raw.id, thread.members._add(raw));
+      }
+      return coll;
+    }, new Collection());
+
     // Patch firstMessage
     // According to https://github.com/dijnie/discord-selfbot.js/issues/1502, rawThreads.first_messages could be null.
     for (const rawMessage of rawThreads?.first_messages || []) {
       client.channels.cache.get(rawMessage.id)?.messages._add(rawMessage);
     }
-    return {
-      threads,
-      hasMore: rawThreads.has_more ?? false,
-    };
+
+    const response = { threads, members: threadMembers };
+
+    // The GET `/guilds/{guild.id}/threads/active` route does not return `has_more`.
+    if ('has_more' in rawThreads) response.hasMore = rawThreads.has_more;
+    return response;
   }
 }
 

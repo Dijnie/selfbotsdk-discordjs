@@ -45,7 +45,7 @@ class WelcomeChannel extends Base {
    * @type {?(TextChannel|NewsChannel|StoreChannel|ForumChannel|MediaChannel)}
    */
   get channel() {
-    return this.client.channels.cache.get(this.channelId) ?? null;
+    return this.client.channels.resolve(this.channelId) ?? null;
   }
 
   /**
@@ -53,7 +53,10 @@ class WelcomeChannel extends Base {
    * @type {GuildEmoji|Emoji}
    */
   get emoji() {
-    return this.client.emojis.cache.get(this._emoji.id) ?? new Emoji(this.client, this._emoji);
+    return (
+      (this._emoji.id && (this.guild.emojis?.cache.get(this._emoji.id) ?? this.client.emojis.cache.get(this._emoji.id))) ??
+      new Emoji(this.client, this._emoji)
+    );
   }
 }
 

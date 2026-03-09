@@ -3,8 +3,11 @@
 const { Collection } = require('@discordjs/collection');
 const BaseGuildEmojiManager = require('./BaseGuildEmojiManager');
 const { Error, TypeError } = require('../errors');
+const { ApplicationEmoji } = require('../structures/ApplicationEmoji');
+const ReactionEmoji = require('../structures/ReactionEmoji');
 const DataResolver = require('../util/DataResolver');
 const Permissions = require('../util/Permissions');
+const { parseEmoji } = require('../util/Util');
 
 /**
  * Manages API methods for GuildEmojis and stores their cache.
@@ -23,6 +26,69 @@ class GuildEmojiManager extends BaseGuildEmojiManager {
 
   _add(data, cache) {
     return super._add(data, cache, { extras: [this.guild] });
+  }
+
+  /**
+   * Data that can be resolved into a GuildEmoji object. This can be:
+   * * A Snowflake
+   * * A GuildEmoji object
+   * * A ReactionEmoji object
+   * * An ApplicationEmoji object
+   * @typedef {Snowflake|GuildEmoji|ReactionEmoji|ApplicationEmoji} EmojiResolvable
+   */
+
+  /**
+   * Resolves an EmojiResolvable to an Emoji object.
+   * @param {EmojiResolvable} emoji The Emoji resolvable to identify
+   * @returns {?GuildEmoji}
+   */
+  resolve(emoji) {
+    if (emoji instanceof ReactionEmoji) return super.cache.get(emoji.id) ?? null;
+    if (emoji instanceof ApplicationEmoji) return super.cache.get(emoji.id) ?? null;
+    return super.resolve(emoji);
+  }
+
+  /**
+   * Resolves an EmojiResolvable to an Emoji id string.
+   * @param {EmojiResolvable} emoji The Emoji resolvable to identify
+   * @returns {?Snowflake}
+   */
+  resolveId(emoji) {
+    if (emoji instanceof ReactionEmoji) return emoji.id;
+    if (emoji instanceof ApplicationEmoji) return emoji.id;
+    return super.resolveId(emoji);
+  }
+
+  /**
+   * Data that can be resolved to give an emoji identifier. This can be:
+   * * An EmojiResolvable
+   * * The `<a:name:id>`, `<:name:id>`, `a:name:id` or `name:id` emoji identifier string of an emoji
+   * * The Unicode representation of an emoji
+   * @typedef {string|EmojiResolvable} EmojiIdentifierResolvable
+   */
+
+  /**
+   * Resolves an EmojiResolvable to an emoji identifier.
+   * @param {EmojiIdentifierResolvable} emoji The emoji resolvable to resolve
+   * @returns {?string}
+   */
+  resolveIdentifier(emoji) {
+    const emojiResolvable = this.resolve(emoji);
+    if (emojiResolvable) return emojiResolvable.identifier;
+    if (emoji instanceof ReactionEmoji) return emoji.identifier;
+    if (emoji instanceof ApplicationEmoji) return emoji.identifier;
+    if (typeof emoji === 'string') {
+      const res = parseEmoji(emoji);
+      let identifier = emoji;
+      if (res?.name.length) {
+        identifier = `${res.animated ? 'a:' : ''}${res.name}${res.id ? `:${res.id}` : ''}`;
+      }
+
+      if (!identifier.includes('%')) return encodeURIComponent(identifier);
+      return identifier;
+    }
+
+    return null;
   }
 
   /**
@@ -158,7 +224,13 @@ class GuildEmojiManager extends BaseGuildEmojiManager {
 
     const { me } = this.guild.members;
     if (!me) throw new Error('GUILD_UNCACHED_ME');
-    if (!me.permissions.has(Permissions.FLAGS.MANAGE_EMOJIS_AND_STICKERS)) {
+    // Check for CREATE_GUILD_EXPRESSIONS or MANAGE_EMOJIS_AND_STICKERS (v14 uses either)
+    if (
+      !me.permissions.any([
+        Permissions.FLAGS.CREATE_GUILD_EXPRESSIONS,
+        Permissions.FLAGS.MANAGE_EMOJIS_AND_STICKERS,
+      ])
+    ) {
       throw new Error('MISSING_MANAGE_EMOJIS_AND_STICKERS_PERMISSION', this.guild);
     }
 

@@ -72,7 +72,7 @@ class GuildEmoji extends BaseGuildEmoji {
    * Fetches the author for this emoji
    * @returns {Promise<User>}
    */
-  fetchAuthor() {
+  async fetchAuthor() {
     return this.guild.emojis.fetchAuthor(this);
   }
 

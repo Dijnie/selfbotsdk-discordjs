@@ -50,27 +50,6 @@ class IntegrationApplication extends Application {
       this.rpcOrigins ??= [];
     }
 
-    if ('summary' in data) {
-      /**
-       * The application's summary
-       * @type {?string}
-       * @deprecated This property is no longer being sent by the API.
-       */
-      this.summary = data.summary;
-    } else {
-      this.summary ??= null;
-    }
-
-    if ('hook' in data) {
-      /**
-       * Whether the application can be default hooked by the client
-       * @type {?boolean}
-       */
-      this.hook = data.hook;
-    } else {
-      this.hook ??= null;
-    }
-
     if ('cover_image' in data) {
       /**
        * The hash of the application's cover image

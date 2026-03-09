@@ -4,6 +4,7 @@ const process = require('node:process');
 const { Collection } = require('@discordjs/collection');
 const AnonymousGuild = require('./AnonymousGuild');
 const GuildAuditLogs = require('./GuildAuditLogs');
+const GuildOnboarding = require('./GuildOnboarding');
 const GuildPreview = require('./GuildPreview');
 const GuildTemplate = require('./GuildTemplate');
 const Integration = require('./Integration');
@@ -614,7 +615,10 @@ class Guild extends AnonymousGuild {
    * @param {BaseFetchOptions} [options] The options for fetching the member
    * @returns {Promise<GuildMember>}
    */
-  fetchOwner(options) {
+  async fetchOwner(options) {
+    if (!this.ownerId) {
+      throw new Error('FETCH_OWNER_ID');
+    }
     return this.members.fetch({ ...options, user: this.ownerId });
   }
 
@@ -909,7 +913,7 @@ class Guild extends AnonymousGuild {
 
   /**
    * Fetches the guild onboarding data for this guild.
-   * @returns {Promise<Object>}
+   * @returns {Promise<GuildOnboarding>}
    * @example
    * // Fetch guild onboarding
    * guild.fetchOnboarding()
@@ -918,8 +922,7 @@ class Guild extends AnonymousGuild {
    */
   async fetchOnboarding() {
     const data = await this.client.api.guilds(this.id).onboarding.get();
-    // TODO: return new GuildOnboarding(this.client, data) when GuildOnboarding is available in selfbot
-    return data;
+    return new GuildOnboarding(this.client, data);
   }
 
   /**
@@ -1176,8 +1179,7 @@ class Guild extends AnonymousGuild {
       },
       reason: options.reason,
     });
-    // TODO: return new GuildOnboarding(this.client, data) when GuildOnboarding is available in selfbot
-    return data;
+    return new GuildOnboarding(this.client, data);
   }
 
   /**

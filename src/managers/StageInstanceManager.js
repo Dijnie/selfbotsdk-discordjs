@@ -3,7 +3,6 @@
 const CachedManager = require('./CachedManager');
 const { TypeError, Error } = require('../errors');
 const { StageInstance } = require('../structures/StageInstance');
-const { PrivacyLevels } = require('../util/Constants');
 
 /**
  * Manages API methods for {@link StageInstance} objects and holds their cache.
@@ -61,9 +60,8 @@ class StageInstanceManager extends CachedManager {
     const channelId = this.guild.channels.resolveId(channel);
     if (!channelId) throw new Error('STAGE_CHANNEL_RESOLVE');
     if (typeof options !== 'object') throw new TypeError('INVALID_TYPE', 'options', 'object', true);
-    let { guildScheduledEvent, topic, privacyLevel, sendStartNotification } = options;
+    const { guildScheduledEvent, topic, privacyLevel, sendStartNotification } = options;
 
-    privacyLevel &&= typeof privacyLevel === 'number' ? privacyLevel : PrivacyLevels[privacyLevel];
     const guildScheduledEventId = guildScheduledEvent && this.resolveId(guildScheduledEvent);
 
     const data = await this.client.api['stage-instances'].post({
@@ -126,9 +124,7 @@ class StageInstanceManager extends CachedManager {
     const channelId = this.guild.channels.resolveId(channel);
     if (!channelId) throw new Error('STAGE_CHANNEL_RESOLVE');
 
-    let { topic, privacyLevel } = options;
-
-    privacyLevel &&= typeof privacyLevel === 'number' ? privacyLevel : PrivacyLevels[privacyLevel];
+    const { topic, privacyLevel } = options;
 
     const data = await this.client.api('stage-instances', channelId).patch({
       data: {

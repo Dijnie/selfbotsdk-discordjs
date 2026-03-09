@@ -100,7 +100,16 @@ class GuildMember extends Base {
       this.banner ??= null;
     }
 
-    if ('joined_at' in data) this.joinedTimestamp = new Date(data.joined_at).getTime();
+    if ('joined_at' in data) {
+      /**
+       * The timestamp the member joined the guild at
+       * @type {?number}
+       */
+      this.joinedTimestamp = data.joined_at && new Date(data.joined_at).getTime();
+    } else {
+      this.joinedTimestamp ??= null;
+    }
+
     if ('premium_since' in data) {
       this.premiumSinceTimestamp = data.premium_since ? new Date(data.premium_since).getTime() : null;
     }

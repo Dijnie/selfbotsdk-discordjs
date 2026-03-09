@@ -2,6 +2,7 @@
 
 const Base = require('./Base');
 const { MembershipStates } = require('../util/Constants');
+// Note: v14 removed the `permissions` field from TeamMember in favor of `role`
 
 /**
  * Represents a Client OAuth2 Application Team Member.
@@ -21,26 +22,9 @@ class TeamMember extends Base {
   }
 
   _patch(data) {
-    if ('permissions' in data) {
-      /**
-       * The permissions this Team Member has with regard to the team
-       * @type {string[]}
-       * @deprecated Use {@link TeamMember#role} instead.
-       */
-      this.permissions = data.permissions;
-    }
-
-    if ('role' in data) {
-      /**
-       * The role of this Team Member
-       * @type {TeamMemberRole}
-       */
-      this.role = data.role;
-    }
-
     if ('membership_state' in data) {
       /**
-       * The permissions this Team Member has with regard to the team
+       * The membership state of this Team Member
        * @type {MembershipState}
        */
       this.membershipState = MembershipStates[data.membership_state];
@@ -52,6 +36,14 @@ class TeamMember extends Base {
        * @type {User}
        */
       this.user = this.client.users._add(data.user);
+    }
+
+    if ('role' in data) {
+      /**
+       * The role of this Team Member
+       * @type {TeamMemberRole}
+       */
+      this.role = data.role;
     }
   }
 

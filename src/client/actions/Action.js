@@ -24,11 +24,7 @@ class GenericAction {
   }
 
   getPayload(data, manager, id, partialType, cache) {
-    const existing = manager.cache.get(id);
-    if (!existing && this.client.options.partials.includes(partialType)) {
-      return manager._add(data, cache);
-    }
-    return existing;
+    return this.client.options.partials.includes(partialType) ? manager._add(data, cache) : manager.cache.get(id);
   }
 
   getChannel(data) {
@@ -65,6 +61,12 @@ class GenericAction {
         cache,
       )
     );
+  }
+
+  getPoll(data, message) {
+    // Return the existing poll on the message if available
+    if (message.partial) return null;
+    return message.poll ?? null;
   }
 
   getReaction(data, message, user) {
@@ -110,6 +112,18 @@ class GenericAction {
       id,
       PartialTypes.GUILD_SCHEDULED_EVENT,
     );
+  }
+
+  getThreadMember(id, manager) {
+    return manager.cache.get(id) ?? null;
+  }
+
+  getSoundboardSound(data, guild) {
+    return guild.soundboardSounds?.cache.get(data.sound_id) ?? null;
+  }
+
+  spreadInjectedData(data) {
+    return Object.fromEntries(Object.getOwnPropertySymbols(data).map(symbol => [symbol, data[symbol]]));
   }
 }
 

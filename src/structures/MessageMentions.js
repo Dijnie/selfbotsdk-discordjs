@@ -8,6 +8,34 @@ const Util = require('../util/Util');
  * Keeps track of mentions in a {@link Message}.
  */
 class MessageMentions {
+  /**
+   * A regular expression that globally matches `@everyone` and `@here`
+   * @type {RegExp}
+   * @memberof MessageMentions
+   */
+  static EVERYONE_PATTERN = /@(everyone|here)/g;
+
+  /**
+   * A regular expression that globally matches user mentions like `<@81440962496172032>`
+   * @type {RegExp}
+   * @memberof MessageMentions
+   */
+  static USERS_PATTERN = /<@!?(\d{17,19})>/g;
+
+  /**
+   * A regular expression that globally matches role mentions like `<@&297577916114403338>`
+   * @type {RegExp}
+   * @memberof MessageMentions
+   */
+  static ROLES_PATTERN = /<@&(\d{17,19})>/g;
+
+  /**
+   * A regular expression that globally matches channel mentions like `<#222079895583457280>`
+   * @type {RegExp}
+   * @memberof MessageMentions
+   */
+  static CHANNELS_PATTERN = /<#(\d{17,19})>/g;
+
   constructor(message, users, roles, everyone, crosspostedChannels, repliedUser) {
     /**
      * The client the message is from
@@ -120,13 +148,13 @@ class MessageMentions {
       } else {
         this.crosspostedChannels = new Collection();
         const channelTypes = Object.keys(ChannelTypes);
-        for (const d of crosspostedChannels) {
-          const type = channelTypes[d.type];
-          this.crosspostedChannels.set(d.id, {
-            channelId: d.id,
-            guildId: d.guild_id,
+        for (const crosspostedChannel of crosspostedChannels) {
+          const type = channelTypes[crosspostedChannel.type];
+          this.crosspostedChannels.set(crosspostedChannel.id, {
+            channelId: crosspostedChannel.id,
+            guildId: crosspostedChannel.guild_id,
             type: type ?? 'UNKNOWN',
-            name: d.name,
+            name: crosspostedChannel.name,
           });
         }
       }
@@ -151,10 +179,10 @@ class MessageMentions {
     if (this._members) return this._members;
     if (!this.guild) return null;
     this._members = new Collection();
-    this.users.forEach(user => {
+    for (const user of this.users.values()) {
       const member = this.guild.members.resolve(user);
       if (member) this._members.set(member.user.id, member);
-    });
+    }
     return this._members;
   }
 
@@ -245,29 +273,5 @@ class MessageMentions {
     });
   }
 }
-
-/**
- * Regular expression that globally matches `@everyone` and `@here`
- * @type {RegExp}
- */
-MessageMentions.EVERYONE_PATTERN = /@(everyone|here)/g;
-
-/**
- * Regular expression that globally matches user mentions like `<@81440962496172032>`
- * @type {RegExp}
- */
-MessageMentions.USERS_PATTERN = /<@!?(\d{17,19})>/g;
-
-/**
- * Regular expression that globally matches role mentions like `<@&297577916114403338>`
- * @type {RegExp}
- */
-MessageMentions.ROLES_PATTERN = /<@&(\d{17,19})>/g;
-
-/**
- * Regular expression that globally matches channel mentions like `<#222079895583457280>`
- * @type {RegExp}
- */
-MessageMentions.CHANNELS_PATTERN = /<#(\d{17,19})>/g;
 
 module.exports = MessageMentions;

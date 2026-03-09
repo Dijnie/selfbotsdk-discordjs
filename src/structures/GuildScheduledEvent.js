@@ -283,11 +283,12 @@ class GuildScheduledEvent extends Base {
 
   /**
    * The time the guild scheduled event will start at
-   * @type {Date}
+   * <info>This can be potentially `null` only when it's an {@link AuditLogEntryTarget}</info>
+   * @type {?Date}
    * @readonly
    */
   get scheduledStartAt() {
-    return new Date(this.scheduledStartTimestamp);
+    return this.scheduledStartTimestamp && new Date(this.scheduledStartTimestamp);
   }
 
   /**
@@ -332,7 +333,7 @@ class GuildScheduledEvent extends Base {
    * @param {boolean} [force=true] Whether to skip the cache check and request the API
    * @returns {Promise<GuildScheduledEvent>}
    */
-  fetch(force = true) {
+  async fetch(force = true) {
     return this.guild.scheduledEvents.fetch({ guildScheduledEvent: this.id, force });
   }
 
@@ -369,7 +370,7 @@ class GuildScheduledEvent extends Base {
    *  .then(guildScheduledEvent => console.log(guildScheduledEvent))
    *  .catch(console.error);
    */
-  edit(options) {
+  async edit(options) {
     return this.guild.scheduledEvents.edit(this.id, options);
   }
 
@@ -398,7 +399,7 @@ class GuildScheduledEvent extends Base {
    *  .then(guildScheduledEvent => console.log(`Set the name to: ${guildScheduledEvent.name}`))
    *  .catch(console.error);
    */
-  setName(name, reason) {
+  async setName(name, reason) {
     return this.edit({ name, reason });
   }
 
@@ -413,7 +414,7 @@ class GuildScheduledEvent extends Base {
    *  .then(guildScheduledEvent => console.log(`Set the start time to: ${guildScheduledEvent.scheduledStartTime}`))
    *  .catch(console.error);
    */
-  setScheduledStartTime(scheduledStartTime, reason) {
+  async setScheduledStartTime(scheduledStartTime, reason) {
     return this.edit({ scheduledStartTime, reason });
   }
 
@@ -429,7 +430,7 @@ class GuildScheduledEvent extends Base {
    *  .then(guildScheduledEvent => console.log(`Set the end time to: ${guildScheduledEvent.scheduledEndTime}`))
    *  .catch(console.error);
    */
-  setScheduledEndTime(scheduledEndTime, reason) {
+  async setScheduledEndTime(scheduledEndTime, reason) {
     return this.edit({ scheduledEndTime, reason });
   }
 
@@ -444,7 +445,7 @@ class GuildScheduledEvent extends Base {
    *  .then(guildScheduledEvent => console.log(`Set the description to: ${guildScheduledEvent.description}`))
    *  .catch(console.error);
    */
-  setDescription(description, reason) {
+  async setDescription(description, reason) {
     return this.edit({ description, reason });
   }
 
@@ -461,7 +462,7 @@ class GuildScheduledEvent extends Base {
    *  .then(guildScheduledEvent => console.log(`Set the status to: ${guildScheduledEvent.status}`))
    *  .catch(console.error);
    */
-  setStatus(status, reason) {
+  async setStatus(status, reason) {
     return this.edit({ status, reason });
   }
 
@@ -476,7 +477,7 @@ class GuildScheduledEvent extends Base {
    *  .then(guildScheduledEvent => console.log(`Set the location to: ${guildScheduledEvent.entityMetadata.location}`))
    *  .catch(console.error);
    */
-  setLocation(location, reason) {
+  async setLocation(location, reason) {
     return this.edit({ entityMetadata: { location }, reason });
   }
 
@@ -485,7 +486,7 @@ class GuildScheduledEvent extends Base {
    * @param {FetchGuildScheduledEventSubscribersOptions} [options] Options for fetching the subscribers
    * @returns {Promise<Collection<Snowflake, GuildScheduledEventUser>>}
    */
-  fetchSubscribers(options) {
+  async fetchSubscribers(options) {
     return this.guild.scheduledEvents.fetchSubscribers(this.id, options);
   }
 
@@ -505,7 +506,7 @@ class GuildScheduledEvent extends Base {
    * @returns {boolean}
    */
   isActive() {
-    return GuildScheduledEventStatuses[this.status] === GuildScheduledEventStatuses.ACTIVE;
+    return this.status === 'ACTIVE';
   }
 
   /**
@@ -513,7 +514,7 @@ class GuildScheduledEvent extends Base {
    * @returns {boolean}
    */
   isCanceled() {
-    return GuildScheduledEventStatuses[this.status] === GuildScheduledEventStatuses.CANCELED;
+    return this.status === 'CANCELED';
   }
 
   /**
@@ -521,7 +522,7 @@ class GuildScheduledEvent extends Base {
    * @returns {boolean}
    */
   isCompleted() {
-    return GuildScheduledEventStatuses[this.status] === GuildScheduledEventStatuses.COMPLETED;
+    return this.status === 'COMPLETED';
   }
 
   /**
@@ -529,7 +530,7 @@ class GuildScheduledEvent extends Base {
    * @returns {boolean}
    */
   isScheduled() {
-    return GuildScheduledEventStatuses[this.status] === GuildScheduledEventStatuses.SCHEDULED;
+    return this.status === 'SCHEDULED';
   }
 }
 

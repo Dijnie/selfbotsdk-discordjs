@@ -27,6 +27,7 @@ class MessageReactionAdd extends Action {
       id: data.channel_id,
       user_id: data.user_id,
       ...('guild_id' in data && { guild_id: data.guild_id }),
+      ...this.spreadInjectedData(data),
     });
     if (!channel || !channel.isText()) return false;
 
@@ -41,7 +42,7 @@ class MessageReactionAdd extends Action {
       emoji: data.emoji,
       count: message.partial ? null : 0,
       me: user.id === this.client.user.id,
-      ...data,
+      burst_colors: data.burst_colors,
     });
     if (!reaction) return false;
     reaction._add(user, data.burst);

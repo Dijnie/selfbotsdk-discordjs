@@ -1,3 +1,4 @@
+/* eslint-disable no-use-before-define */
 'use strict';
 
 const { randomUUID } = require('node:crypto');

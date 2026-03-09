@@ -32,8 +32,17 @@ class GuildMemberRoleManager extends DataManager {
    * @readonly
    */
   get cache() {
-    const everyone = this.guild.roles.everyone;
-    return this.guild.roles.cache.filter(role => this.member._roles.includes(role.id)).set(everyone.id, everyone);
+    const cache = new Collection();
+    cache.set(this.guild.id, this.guild.roles.everyone);
+
+    for (const roleId of this.member._roles) {
+      const role = this.guild.roles.cache.get(roleId);
+      if (role !== undefined) {
+        cache.set(roleId, role);
+      }
+    }
+
+    return cache;
   }
 
   /**
@@ -53,7 +62,7 @@ class GuildMemberRoleManager extends DataManager {
    * @readonly
    */
   get icon() {
-    const iconRoles = this.cache.filter(role => role.icon || role.unicodeEmoji);
+    const iconRoles = this.cache.filter(role => role.icon ?? role.unicodeEmoji);
     if (!iconRoles.size) return null;
     return iconRoles.reduce((prev, role) => (role.comparePositionTo(prev) > 0 ? role : prev));
   }
@@ -181,8 +190,8 @@ class GuildMemberRoleManager extends DataManager {
    *   .then(member => console.log(`Member roles is now of ${member.roles.cache.size} size`))
    *   .catch(console.error);
    */
-  set(roles, reason) {
-    return this.member.edit({ roles }, reason);
+  async set(roles, reason) {
+    return this.member.edit({ roles, reason });
   }
 
   clone() {

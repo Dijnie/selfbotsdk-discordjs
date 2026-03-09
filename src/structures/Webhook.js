@@ -88,6 +88,16 @@ class Webhook {
       this.owner ??= null;
     }
 
+    if ('application_id' in data) {
+      /**
+       * The application that created this webhook
+       * @type {?Snowflake}
+       */
+      this.applicationId = data.application_id;
+    } else {
+      this.applicationId ??= null;
+    }
+
     if ('source_guild' in data) {
       /**
        * The source guild of the webhook
@@ -432,12 +442,28 @@ class Webhook {
 
   /**
    * A link to the webhook's avatar.
-   * @param {StaticImageURLOptions} [options={}] Options for the Image URL
+   * @param {ImageURLOptions} [options={}] Options for the image URL
    * @returns {?string}
    */
   avatarURL({ format, size } = {}) {
     if (!this.avatar) return null;
     return this.client.rest.cdn.Avatar(this.id, this.avatar, format, size);
+  }
+
+  /**
+   * Whether this webhook is created by a user.
+   * @returns {boolean}
+   */
+  isUserCreated() {
+    return Boolean(this.type === 'Incoming' && this.owner && !this.owner.bot);
+  }
+
+  /**
+   * Whether this webhook is created by an application.
+   * @returns {boolean}
+   */
+  isApplicationCreated() {
+    return this.type === 'Application';
   }
 
   /**

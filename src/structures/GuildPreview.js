@@ -92,14 +92,14 @@ class GuildPreview extends Base {
       this.description ??= null;
     }
 
-    if (!this.emojis) {
+    if (this.emojis) {
+      this.emojis.clear();
+    } else {
       /**
        * Collection of emojis belonging to this guild
        * @type {Collection<Snowflake, GuildPreviewEmoji>}
        */
       this.emojis = new Collection();
-    } else {
-      this.emojis.clear();
     }
     for (const emoji of data.emojis) {
       this.emojis.set(emoji.id, new GuildPreviewEmoji(this.client, emoji, this));

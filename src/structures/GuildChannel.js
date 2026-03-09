@@ -75,6 +75,8 @@ class GuildChannel extends Channel {
        * @type {?Snowflake}
        */
       this.parentId = data.parent_id;
+    } else {
+      this.parentId ??= null;
     }
 
     if ('permission_overwrites' in data) {
@@ -106,35 +108,37 @@ class GuildChannel extends Channel {
    * @readonly
    */
   get permissionsLocked() {
-    if (!this.parent) return null;
+    const { parent } = this;
+    if (!parent) return null;
 
     // Get all overwrites
     const overwriteIds = new Set([
       ...this.permissionOverwrites.cache.keys(),
-      ...this.parent.permissionOverwrites.cache.keys(),
+      ...parent.permissionOverwrites.cache.keys(),
     ]);
 
     // Compare all overwrites
     return [...overwriteIds].every(key => {
       const channelVal = this.permissionOverwrites.cache.get(key);
-      const parentVal = this.parent.permissionOverwrites.cache.get(key);
+      const parentVal = parent.permissionOverwrites.cache.get(key);
 
       // Handle empty overwrite
       if (
-        (!channelVal &&
+        key === this.guildId &&
+        ((!channelVal &&
           parentVal.deny.bitfield === Permissions.defaultBit &&
           parentVal.allow.bitfield === Permissions.defaultBit) ||
-        (!parentVal &&
-          channelVal.deny.bitfield === Permissions.defaultBit &&
-          channelVal.allow.bitfield === Permissions.defaultBit)
+          (!parentVal &&
+            channelVal.deny.bitfield === Permissions.defaultBit &&
+            channelVal.allow.bitfield === Permissions.defaultBit))
       ) {
         return true;
       }
 
       // Compare overwrites
       return (
-        typeof channelVal !== 'undefined' &&
-        typeof parentVal !== 'undefined' &&
+        channelVal !== undefined &&
+        parentVal !== undefined &&
         channelVal.deny.bitfield === parentVal.deny.bitfield &&
         channelVal.allow.bitfield === parentVal.allow.bitfield
       );
@@ -433,9 +437,10 @@ class GuildChannel extends Channel {
     if (permissions.has(Permissions.FLAGS.ADMINISTRATOR, false)) return true;
     if (this.guild.members.me.communicationDisabledUntilTimestamp > Date.now()) return false;
 
+    const baseBitfield = Permissions.FLAGS.VIEW_CHANNEL | Permissions.FLAGS.MANAGE_CHANNELS;
     const bitfield = VoiceBasedChannelTypes.includes(this.type)
-      ? Permissions.FLAGS.MANAGE_CHANNELS | Permissions.FLAGS.CONNECT
-      : Permissions.FLAGS.VIEW_CHANNEL | Permissions.FLAGS.MANAGE_CHANNELS;
+      ? baseBitfield | Permissions.FLAGS.CONNECT
+      : baseBitfield;
     return permissions.has(bitfield, false);
   }
 

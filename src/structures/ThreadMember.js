@@ -24,6 +24,12 @@ class ThreadMember extends Base {
     this.joinedTimestamp = null;
 
     /**
+     * The flags for this thread member. This will be `null` if partial.
+     * @type {?ThreadMemberFlags}
+     */
+    this.flags = null;
+
+    /**
      * The id of the thread member
      * @type {Snowflake}
      */
@@ -33,7 +39,7 @@ class ThreadMember extends Base {
   }
 
   _patch(data, extra = {}) {
-    if ('join_timestamp' in data) this.joinedTimestamp = new Date(data.join_timestamp).getTime();
+    if ('join_timestamp' in data) this.joinedTimestamp = Date.parse(data.join_timestamp);
 
     if ('flags' in data) {
       /**
@@ -65,12 +71,21 @@ class ThreadMember extends Base {
   }
 
   /**
+   * Whether this thread member is a partial
+   * @type {boolean}
+   * @readonly
+   */
+  get partial() {
+    return this.flags === null;
+  }
+
+  /**
    * The last time this member joined the thread
    * @type {?Date}
    * @readonly
    */
   get joinedAt() {
-    return this.joinedTimestamp ? new Date(this.joinedTimestamp) : null;
+    return this.joinedTimestamp && new Date(this.joinedTimestamp);
   }
 
   /**

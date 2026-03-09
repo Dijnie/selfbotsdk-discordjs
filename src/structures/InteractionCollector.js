@@ -46,6 +46,7 @@ class InteractionCollector extends Collector {
      * @type {?Snowflake}
      */
     this.channelId =
+      options.message?.channelId ??
       this.client.channels.resolveId(options.message?.channel) ??
       options.message?.channel_id ??
       this.client.channels.resolveId(options.channel);
@@ -55,6 +56,7 @@ class InteractionCollector extends Collector {
      * @type {?Snowflake}
      */
     this.guildId =
+      options.message?.guildId ??
       this.client.guilds.resolveId(options.message?.guild) ??
       options.message?.guild_id ??
       this.client.guilds.resolveId(options.channel?.guild) ??
@@ -193,7 +195,7 @@ class InteractionCollector extends Collector {
     if (this.options.max && this.total >= this.options.max) return 'limit';
     if (this.options.maxComponents && this.collected.size >= this.options.maxComponents) return 'componentLimit';
     if (this.options.maxUsers && this.users.size >= this.options.maxUsers) return 'userLimit';
-    return null;
+    return super.endReason;
   }
 
   /**

@@ -84,7 +84,7 @@ class StickerPack extends Base {
 
   /**
    * The URL to this sticker pack's banner.
-   * @param {StaticImageURLOptions} [options={}] Options for the Image URL
+   * @param {ImageURLOptions} [options={}] Options for the image URL
    * @returns {?string}
    */
   bannerURL({ format, size } = {}) {

@@ -12,6 +12,8 @@ class MessageDeleteAction extends Action {
     if (channel) {
       if (!channel.isText()) return {};
 
+      if (channel.isThread()) channel.messageCount--;
+
       message = this.getMessage(data, channel);
       if (message) {
         channel.messages.cache.delete(message.id);

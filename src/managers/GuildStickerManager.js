@@ -97,17 +97,16 @@ class GuildStickerManager extends CachedManager {
   /**
    * Edits a sticker.
    * @param {StickerResolvable} sticker The sticker to edit
-   * @param {GuildStickerEditData} [data] The new data for the sticker
-   * @param {string} [reason] Reason for editing this sticker
+   * @param {GuildStickerEditData} [options={}] The new data for the sticker
    * @returns {Promise<Sticker>}
    */
-  async edit(sticker, data, reason) {
+  async edit(sticker, options = {}) {
     const stickerId = this.resolveId(sticker);
     if (!stickerId) throw new TypeError('INVALID_TYPE', 'sticker', 'StickerResolvable');
 
     const d = await this.client.api.guilds(this.guild.id).stickers(stickerId).patch({
-      data,
-      reason,
+      data: options,
+      reason: options.reason,
     });
 
     const existing = this.cache.get(stickerId);
@@ -116,6 +115,7 @@ class GuildStickerManager extends CachedManager {
       clone._patch(d);
       return clone;
     }
+
     return this._add(d);
   }
 
@@ -126,10 +126,10 @@ class GuildStickerManager extends CachedManager {
    * @returns {Promise<void>}
    */
   async delete(sticker, reason) {
-    sticker = this.resolveId(sticker);
-    if (!sticker) throw new TypeError('INVALID_TYPE', 'sticker', 'StickerResolvable');
+    const resolvedStickerId = this.resolveId(sticker);
+    if (!resolvedStickerId) throw new TypeError('INVALID_TYPE', 'sticker', 'StickerResolvable');
 
-    await this.client.api.guilds(this.guild.id).stickers(sticker).delete({ reason });
+    await this.client.api.guilds(this.guild.id).stickers(resolvedStickerId).delete({ reason });
   }
 
   /**
@@ -168,11 +168,11 @@ class GuildStickerManager extends CachedManager {
    * @returns {Promise<?User>}
    */
   async fetchUser(sticker) {
-    sticker = this.resolve(sticker);
-    if (!sticker) throw new TypeError('INVALID_TYPE', 'sticker', 'StickerResolvable');
-    const data = await this.client.api.guilds(this.guild.id).stickers(sticker.id).get();
-    sticker._patch(data);
-    return sticker.user;
+    const resolvedSticker = this.resolve(sticker);
+    if (!resolvedSticker) throw new TypeError('INVALID_TYPE', 'sticker', 'StickerResolvable');
+    const data = await this.client.api.guilds(this.guild.id).stickers(resolvedSticker.id).get();
+    resolvedSticker._patch(data);
+    return resolvedSticker.user;
   }
 }
 

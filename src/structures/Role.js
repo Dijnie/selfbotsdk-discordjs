@@ -234,7 +234,9 @@ class Role extends Base {
    * @readonly
    */
   get hexColor() {
-    return `#${this.colors.primaryColor.toString(16).padStart(6, '0')}`;
+    // Prefer colors.primaryColor if available, fall back to legacy color
+    const colorValue = this.colors?.primaryColor ?? this.color ?? 0;
+    return `#${colorValue.toString(16).padStart(6, '0')}`;
   }
 
   /**
@@ -330,9 +332,9 @@ class Role extends Base {
    * @returns {Readonly<Permissions>}
    */
   permissionsIn(channel, checkAdmin = true) {
-    channel = this.guild.channels.resolve(channel);
-    if (!channel) throw new Error('GUILD_CHANNEL_RESOLVE');
-    return channel.rolePermissions(this, checkAdmin);
+    const resolvedChannel = this.guild.channels.resolve(channel);
+    if (!resolvedChannel) throw new Error('GUILD_CHANNEL_RESOLVE');
+    return resolvedChannel.rolePermissions(this, checkAdmin);
   }
 
   /**
@@ -511,12 +513,12 @@ class Role extends Base {
 
   /**
    * A link to the role's icon
-   * @param {StaticImageURLOptions} [options={}] Options for the image URL
+   * @param {ImageURLOptions} [options={}] Options for the image URL
    * @returns {?string}
    */
-  iconURL({ format, size } = {}) {
+  iconURL(options = {}) {
     if (!this.icon) return null;
-    return this.client.rest.cdn.RoleIcon(this.id, this.icon, format, size);
+    return this.client.rest.cdn.RoleIcon(this.id, this.icon, options.format ?? options.extension, options.size);
   }
 
   /**

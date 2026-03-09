@@ -45,7 +45,6 @@ class VoiceStateManager extends CachedManager {
    *    .catch(console.error);
    */
   async fetch(member, { cache = true, force = false } = {}) {
-    if (!this.guild?.id) throw new Error('Guild is not defined');
     const id = member === '@me' ? member : this.guild.members.resolveId(member);
     if (!force) {
       const existing = this.cache.get(id === '@me' ? this.client.user.id : id);

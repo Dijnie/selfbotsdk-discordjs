@@ -22,6 +22,7 @@ const {
   MessageComponentTypes,
   MessageReferenceTypes,
   MaxBulkDeletableMessageAge,
+  UndeletableMessageTypes,
 } = require('../util/Constants');
 const MessageFlags = require('../util/MessageFlags');
 const Permissions = require('../util/Permissions');
@@ -241,7 +242,7 @@ class Message extends Base {
     }
 
     // Discord sends null if the message has not been edited
-    if (data.edited_timestamp) {
+    if ('edited_timestamp' in data) {
       /**
        * The timestamp the message was last edited at (if applicable)
        * @type {?number}
@@ -774,6 +775,9 @@ class Message extends Base {
     if (deletedMessages.has(this)) {
       return false;
     }
+
+    if (UndeletableMessageTypes.includes(this.type)) return false;
+
     if (!this.guild) {
       return this.author.id === this.client.user.id;
     }
@@ -787,10 +791,11 @@ class Message extends Base {
     // This flag allows deleting even if timed out
     if (permissions.has(Permissions.FLAGS.ADMINISTRATOR, false)) return true;
 
-    return Boolean(
-      this.author.id === this.client.user.id ||
-        (permissions.has(Permissions.FLAGS.MANAGE_MESSAGES, false) &&
-          this.guild.members.me.communicationDisabledUntilTimestamp < Date.now()),
+    // The auto moderation action message author is the reference message author
+    return (
+      (this.type !== 'AUTO_MODERATION_ACTION' && this.author.id === this.client.user.id) ||
+      (permissions.has(Permissions.FLAGS.MANAGE_MESSAGES, false) &&
+        !this.guild.members.me.isCommunicationDisabled())
     );
   }
 
@@ -819,13 +824,15 @@ class Message extends Base {
    */
   get pinnable() {
     const { channel } = this;
-    return Boolean(
-      !this.system &&
-        !deletedMessages.has(this) &&
-        (!this.guild ||
-          (channel?.viewable &&
-            channel?.permissionsFor(this.client.user)?.has(Permissions.FLAGS.MANAGE_MESSAGES, false))),
-    );
+
+    if (this.system) return false;
+    if (!this.guild) return true;
+    if (!channel || channel.isVoiceBased?.() || !channel.viewable) return false;
+
+    const permissions = channel.permissionsFor(this.client.user);
+    if (!permissions) return false;
+
+    return permissions.has(Permissions.FLAGS.READ_MESSAGE_HISTORY | Permissions.FLAGS.MANAGE_MESSAGES);
   }
 
   /**
@@ -838,8 +845,7 @@ class Message extends Base {
     if (!messageId) throw new Error('MESSAGE_REFERENCE_MISSING');
     const channel = this.client.channels.resolve(channelId);
     if (!channel) throw new Error('GUILD_CHANNEL_RESOLVE');
-    const message = await channel.messages.fetch(messageId);
-    return message;
+    return channel.messages.fetch(messageId);
   }
 
   /**
@@ -1183,8 +1189,8 @@ class Message extends Base {
     if (equal && rawData) {
       equal =
         this.mentions.everyone === message.mentions.everyone &&
-        this.createdTimestamp === new Date(rawData.timestamp).getTime() &&
-        this.editedTimestamp === new Date(rawData.edited_timestamp).getTime();
+        this.createdTimestamp === Date.parse(rawData.timestamp) &&
+        this.editedTimestamp === Date.parse(rawData.edited_timestamp);
     }
 
     return equal;

@@ -51,6 +51,12 @@ class ApplicationCommand extends Base {
      */
     this.type = ApplicationCommandTypes[data.type];
 
+    /**
+     * Whether this command is age-restricted (18+)
+     * @type {boolean}
+     */
+    this.nsfw = data.nsfw ?? false;
+
     this._patch(data);
   }
 
@@ -153,6 +159,38 @@ class ApplicationCommand extends Base {
       this.dmPermission = data.dm_permission;
     } else {
       this.dmPermission ??= null;
+    }
+
+    if ('integration_types' in data) {
+      /**
+       * Installation context(s) where the command is available
+       * <info>Only for globally-scoped commands</info>
+       * @type {?number[]}
+       */
+      this.integrationTypes = data.integration_types;
+    } else {
+      this.integrationTypes ??= null;
+    }
+
+    if ('contexts' in data) {
+      /**
+       * Interaction context(s) where the command can be used
+       * <info>Only for globally-scoped commands</info>
+       * @type {?number[]}
+       */
+      this.contexts = data.contexts;
+    } else {
+      this.contexts ??= null;
+    }
+
+    if ('handler' in data) {
+      /**
+       * Determines whether the interaction is handled by the app's interactions handler or by Discord.
+       * @type {?number}
+       */
+      this.handler = data.handler;
+    } else {
+      this.handler ??= null;
     }
 
     if ('version' in data) {
@@ -394,6 +432,7 @@ class ApplicationCommand extends Base {
       ('version' in command && command.version !== this.version) ||
       ('autocomplete' in command && command.autocomplete !== this.autocomplete) ||
       (commandType && commandType !== this.type) ||
+      ('nsfw' in command && command.nsfw !== this.nsfw) ||
       defaultMemberPermissions !== (this.defaultMemberPermissions?.bitfield ?? null) ||
       (typeof dmPermission !== 'undefined' && dmPermission !== this.dmPermission) ||
       // Future proof for options being nullable

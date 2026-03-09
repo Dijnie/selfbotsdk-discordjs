@@ -973,6 +973,7 @@ exports.ChannelTypes = createEnum([
  */
 exports.TextBasedChannelTypes = [
   'DM',
+  'GROUP_DM',
   'GUILD_TEXT',
   'GUILD_NEWS',
   'GUILD_NEWS_THREAD',
@@ -1125,6 +1126,20 @@ exports.HolographicStyles = {
   PRIMARY: 11_127_295,
   SECONDARY: 16_759_788,
   TERTIARY: 16_761_760,
+};
+
+/**
+ * Holographic color values for role styling (v14 compat alias with PascalCase keys).
+ * When using `tertiaryColor`, the API enforces these specific values for holographic effect.
+ * * Primary: 11127295 (0xA9FFFF)
+ * * Secondary: 16759788 (0xFFCCCC)
+ * * Tertiary: 16761760 (0xFFE0A0)
+ * @typedef {Object<string, number>} HolographicStyle
+ */
+exports.HolographicStyle = {
+  Primary: 11_127_295,
+  Secondary: 16_759_788,
+  Tertiary: 16_761_760,
 };
 
 /**
@@ -1743,6 +1758,18 @@ exports.SelectMenuComponentTypes = createEnum([
   'MENTIONABLE_SELECT',
   'CHANNEL_SELECT',
 ]);
+
+/**
+ * The types of select menus. The available types are:
+ * * STRING_MENU
+ * * USER_SELECT
+ * * ROLE_SELECT
+ * * MENTIONABLE_SELECT
+ * * CHANNEL_SELECT
+ * @typedef {string[]} SelectMenuTypes
+ * @see {@link https://discord.com/developers/docs/interactions/message-components#component-object-component-types}
+ */
+exports.SelectMenuTypes = ['STRING_MENU', 'USER_SELECT', 'ROLE_SELECT', 'MENTIONABLE_SELECT', 'CHANNEL_SELECT'];
 
 /**
  * The style of a message button
