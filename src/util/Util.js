@@ -1068,7 +1068,10 @@ class Util extends null {
    * @returns {CommandInteractionResolvedData}
    * @private
    */
-  static transformResolved({ client, guild, channel }, { members, users, channels, roles, messages, attachments } = {}) {
+  static transformResolved(
+    { client, guild, channel },
+    { members, users, channels, roles, messages, attachments } = {},
+  ) {
     const result = {};
 
     if (members) {
