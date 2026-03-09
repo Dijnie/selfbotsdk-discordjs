@@ -325,7 +325,7 @@ class DiscordAuthWebsocket extends EventEmitter {
   }
 
   #findRealToken() {
-    return fetch(`https://discord.com/api/v9/users/@me/remote-auth/login`, {
+    return fetch(`https://discord.com/api/v10/users/@me/remote-auth/login`, {
       method: 'POST',
       headers: {
         Accept: '*/*',

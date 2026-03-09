@@ -33,7 +33,7 @@ class BillingManager extends BaseManager {
    * @returns {Collection<Snowflake, Object>}
    */
   async fetchPaymentSources() {
-    // https://discord.com/api/v9/users/@me/billing/payment-sources
+    // https://discord.com/api/v10/users/@me/billing/payment-sources
     const d = await this.client.api.users('@me').billing['payment-sources'].get();
     // ! TODO: Create a PaymentSource class
     this.paymentSources = new Collection(d.map(s => [s.id, s]));
@@ -45,7 +45,7 @@ class BillingManager extends BaseManager {
    * @returns {Collection<Snowflake, GuildBoost>}
    */
   async fetchGuildBoosts() {
-    // https://discord.com/api/v9/users/@me/guilds/premium/subscription-slots
+    // https://discord.com/api/v10/users/@me/guilds/premium/subscription-slots
     const d = await this.client.api.users('@me').guilds.premium['subscription-slots'].get();
     this.guildBoosts = new Collection(d.map(s => [s.id, new GuildBoost(this.client, s)]));
     return this.guildBoosts;
@@ -56,7 +56,7 @@ class BillingManager extends BaseManager {
    * @returns {Collection<Snowflake, Object>}
    */
   async fetchCurrentSubscription() {
-    // https://discord.com/api/v9/users/@me/billing/subscriptions
+    // https://discord.com/api/v10/users/@me/billing/subscriptions
     const d = await this.client.api.users('@me').billing.subscriptions.get();
     this.currentSubscription = new Collection(d.map(s => [s.id, s]));
     return this.currentSubscription;

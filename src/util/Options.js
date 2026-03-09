@@ -217,7 +217,7 @@ class Options extends null {
         client_state: {
           guild_versions: {},
         },
-        version: 9,
+        version: 10,
         agent: {},
       },
       http: {
@@ -225,7 +225,7 @@ class Options extends null {
         headers: {
           'User-Agent': UserAgent,
         },
-        version: 9,
+        version: 10,
         api: 'https://discord.com/api',
         cdn: 'https://cdn.discordapp.com',
         invite: 'https://discord.gg',

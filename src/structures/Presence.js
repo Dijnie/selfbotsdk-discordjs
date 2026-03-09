@@ -582,7 +582,7 @@ class RichPresenceAssets {
    * Support:
    * - cdn.discordapp.com
    * - media.discordapp.net
-   * - Assets ID (https://discord.com/api/v9/oauth2/applications/{application_id}/assets)
+   * - Assets ID (https://discord.com/api/v10/oauth2/applications/{application_id}/assets)
    * - Media Proxy (mp:external/{hash})
    * - Twitch (twitch:{username})
    * - YouTube (youtube:{video_id})

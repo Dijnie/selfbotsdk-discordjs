@@ -286,7 +286,7 @@ class VoiceState extends Base {
    * @returns {Promise<void>}
    */
   setStatus(status = '') {
-    // PUT https://discord.com/api/v9/channels/:id/voice-status
+    // PUT https://discord.com/api/v10/channels/:id/voice-status
     return this.client.api.channels(this.channel.id, 'voice-status').put({
       data: {
         status,
@@ -300,8 +300,8 @@ class VoiceState extends Base {
    */
   async getPreview() {
     if (!this.streaming) throw new Error('USER_NOT_STREAMING');
-    // URL: https://discord.com/api/v9/streams/guild:guildid:voicechannelid:userid/preview
-    // URL: https://discord.com/api/v9/streams/call:channelId:userId/preview
+    // URL: https://discord.com/api/v10/streams/guild:guildid:voicechannelid:userid/preview
+    // URL: https://discord.com/api/v10/streams/call:channelId:userId/preview
     const streamKey = this.guild?.id
       ? `guild:${this.guild.id}:${this.channelId}:${this.id}`
       : `call:${this.channelId}:${this.id}`;
@@ -316,8 +316,8 @@ class VoiceState extends Base {
    */
   postPreview(base64Image) {
     if (!this.client.user.id === this.id || !this.streaming) throw new Error('USER_NOT_STREAMING');
-    // URL: https://discord.com/api/v9/streams/guild:guildid:voicechannelid:userid/preview
-    // URL: https://discord.com/api/v9/streams/call:channelId:userId/preview
+    // URL: https://discord.com/api/v10/streams/guild:guildid:voicechannelid:userid/preview
+    // URL: https://discord.com/api/v10/streams/call:channelId:userId/preview
     const streamKey = this.guild?.id
       ? `guild:${this.guild.id}:${this.channelId}:${this.id}`
       : `call:${this.channelId}:${this.id}`;

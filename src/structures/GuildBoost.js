@@ -73,7 +73,7 @@ class GuildBoost extends Base {
    * @returns {Promise<GuildBoost>}
    */
   async unsubscribe() {
-    // https://discord.com/api/v9/guilds/:id/premium/subscriptions/:id
+    // https://discord.com/api/v10/guilds/:id/premium/subscriptions/:id
     if (!this.guildId) throw new Error('BOOST_UNUSED');
     if (!this.premiumGuildSubscriptionId) throw new Error('BOOST_UNCACHED');
     await this.client.api.guilds(this.guildId).premium.subscriptions(this.premiumGuildSubscriptionId).delete();
@@ -89,7 +89,7 @@ class GuildBoost extends Base {
    * @returns {Promise<GuildBoost>}
    */
   async subscribe(guild) {
-    // https://discord.com/api/v9/guilds/:id/premium/subscriptions
+    // https://discord.com/api/v10/guilds/:id/premium/subscriptions
     if (this.guildId || this.premiumGuildSubscriptionId) throw new Error('BOOST_USED');
     const id = this.client.guilds.resolveId(guild);
     if (!id) throw new Error('UNKNOWN_GUILD');

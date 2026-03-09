@@ -248,7 +248,7 @@ class MessageManager extends CachedManager {
       if (existing && !existing.partial) return existing;
     }
 
-    // https://discord.com/api/v9/channels/:id/messages?limit=50&around=:msgid
+    // https://discord.com/api/v10/channels/:id/messages?limit=50&around=:msgid
     return new Promise((resolve, reject) => {
       this._fetchMany(
         {

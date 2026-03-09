@@ -10,7 +10,7 @@ module.exports = (client, { d: data }) => {
     }
     case 'AGREEMENTS': {
       msg = 'You need to accept the new Terms of Service and Privacy Policy.';
-      // https://discord.com/api/v9/users/@me/agreements
+      // https://discord.com/api/v10/users/@me/agreements
       client.api
         .users('@me')
         .agreements.patch({

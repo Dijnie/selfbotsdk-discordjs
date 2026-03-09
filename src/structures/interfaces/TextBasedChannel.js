@@ -220,8 +220,8 @@ class TextBasedChannel {
 
   searchInteractionFromGuildAndPrivateChannel() {
     // Support Slash / ContextMenu
-    // API https://canary.discord.com/api/v9/guilds/:id/application-command-index // Guild
-    //     https://canary.discord.com/api/v9/channels/:id/application-command-index // DM Channel
+    // API https://canary.discord.com/api/v10/guilds/:id/application-command-index // Guild
+    //     https://canary.discord.com/api/v10/channels/:id/application-command-index // DM Channel
     // Updated: 07/01/2023
     return this.client.api[this.guild ? 'guilds' : 'channels'][this.guild?.id || this.id]['application-command-index']
       .get()
